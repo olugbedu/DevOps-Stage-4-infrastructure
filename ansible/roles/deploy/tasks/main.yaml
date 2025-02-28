@@ -1,0 +1,35 @@
+---
+- name: Create app directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Clone application repository
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: main
+    force: yes
+
+- name: Create letsencrypt directory
+  file:
+    path: "{{ app_dir }}/letsencrypt"
+    state: directory
+    mode: '0755'
+
+- name: Update domain in docker-compose.yml
+  replace:
+    path: "{{ app_dir }}/docker-compose.yml"
+    regexp: 'gbedu\.name\.ng'
+    replace: "{{ domain }}"
+
+- name: Deploy application using Docker Compose
+  shell: docker-compose up -d
+  args:
+    chdir: "{{ app_dir }}"
+
+- name: Deploy application using Docker Compose
+  shell: docker ps -a
+  args:
+    chdir: "{{ app_dir }}"    
