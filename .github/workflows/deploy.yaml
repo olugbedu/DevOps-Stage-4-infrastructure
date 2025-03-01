@@ -16,6 +16,8 @@ permissions:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    outputs:
+      apply_status: ${{ steps.apply.outcome }}  # Capture Terraform Apply outcome
 
     steps:
       - name: Checkout Repo
@@ -95,6 +97,7 @@ jobs:
         run: exit 1
 
       - name: Terraform Apply
+        id: apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: terraform
         run: terraform apply -auto-approve -input=false
@@ -107,6 +110,7 @@ jobs:
   ansible:
     runs-on: ubuntu-latest
     needs: terraform
+    if: ${{ needs.terraform.outputs.apply_status == 'success' }}  # Runs only if Terraform Apply succeeds
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
