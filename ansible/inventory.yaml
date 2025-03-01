@@ -2,9 +2,9 @@
 all:
   hosts:
     vps:
-      ansible_host: "{{ terraform_output.elastic_ip }}"
+      ansible_host: "54.246.122.204"
       ansible_user: "ubuntu"
-      ansible_ssh_private_key_file: "~/.ssh/deji_new
+      ansible_ssh_private_key_file: "~/.ssh/deji_new"
       ansible_become: true
       ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
 
