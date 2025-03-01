@@ -1,4 +1,4 @@
-name: Infrastructure Provision, Deploy and Configure
+name: Infrastructure Provision
 
 on:
   push:
@@ -106,30 +106,6 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           timeout 300 bash -c 'while ! nc -z ${{ secrets.ELASTIC_IP }} 22; do sleep 1; done'
-
-  ansible:
-    runs-on: ubuntu-latest
-    needs: terraform
-    if: ${{ needs.terraform.outputs.apply_status == 'success' }}  # Runs only if Terraform Apply succeeds
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-
-      - name: Install Python
-        run: sudo apt-get update && sudo apt-get install -y python3-pip
-
-      - name: Install Ansible
-        run: sudo apt-get update && sudo apt-get install -y ansible
-
-      - name: SSH into EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.ELASTIC_IP }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            ansible-playbook -i ansible/inventory.yaml ansible/playbook.yaml --extra-vars '@ansible/terraform_vars.yml'
-
 
       - name: Cleanup Sensitive Files
         if: always()
