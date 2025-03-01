@@ -96,6 +96,10 @@ resource "aws_security_group" "todo_sg" {
 resource "aws_key_pair" "deji_new" {
   key_name   = "deji_new"
   public_key = file("~/.ssh/deji_new.pub")
+
+  lifecycle {
+    ignore_changes = [public_key]
+  }
 }
 
 # EC2 Instance
