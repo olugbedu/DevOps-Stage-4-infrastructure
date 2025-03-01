@@ -109,11 +109,12 @@ jobs:
       - name: SSH into EC2
         uses: appleboy/ssh-action@master
         with:
-            host: ${{ secrets.ELASTIC_IP }}
-            username: ubuntu
-            key: ${{ secrets.SSH_PRIVATE_KEY }}
-                run: |
-                  ansible-playbook -i ansible/inventory.yaml --extra-vars '@ansible/terraform_vars.yml' ansible/playbook.yaml
+          host: ${{ secrets.ELASTIC_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            ansible-playbook -i ansible/inventory.yaml --extra-vars '@ansible/terraform_vars.yml' ansible/playbook.yaml
+
 
       - name: Cleanup Sensitive Files
         if: always()
