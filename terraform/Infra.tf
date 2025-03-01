@@ -93,13 +93,14 @@ resource "aws_security_group" "todo_sg" {
 }
 
 # Generating keypair
+data "aws_key_pair" "existing_key" {
+  key_name = "deji_new"
+}
+
 resource "aws_key_pair" "deji_new" {
+  count      = length(data.aws_key_pair.existing_key.id) == 0 ? 1 : 0
   key_name   = "deji_new"
   public_key = file("~/.ssh/deji_new.pub")
-
-  lifecycle {
-    ignore_changes = [public_key]
-  }
 }
 
 # EC2 Instance
@@ -108,7 +109,7 @@ resource "aws_instance" "todo-app" {
   instance_type   = "t2.large"
   subnet_id       = aws_subnet.public.id
   security_groups = [aws_security_group.todo_sg.id]
-  key_name        = aws_key_pair.deji_new.id
+  key_name        = length(aws_key_pair.deji_new) > 0 ? aws_key_pair.deji_new[0].id : null
   tags = {
     Name = "todo-app"
   }
