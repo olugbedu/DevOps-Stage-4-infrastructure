@@ -60,7 +60,6 @@ jobs:
       - name: Comment Terraform Plan on PR
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
-        working-directory: terraform
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
