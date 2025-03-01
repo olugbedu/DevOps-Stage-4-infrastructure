@@ -23,10 +23,9 @@ jobs:
       
       - name: Copy ssh key
         run: |
-          mkdir .ssh && cd .ssh
-          echo "${{ secrets.SSH_PUBLIC_KEY }}" > deji_new.pub
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > deji_new
-          chmod 600 deji_new
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/deji_new.pub
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deji_new
+          chmod 600 ~/.ssh/deji_new
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -115,4 +114,4 @@ jobs:
       - name: Cleanup Sensitive Files
         if: always()
         run: |
-          rm -f ssh_key.pem inventory.ini
+          rm -f ~/.ssh/deji_new
