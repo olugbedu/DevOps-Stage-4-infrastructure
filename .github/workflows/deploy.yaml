@@ -23,9 +23,11 @@ jobs:
       
       - name: Copy ssh key
         run: |
-          echo "${{ secrets.SSH_PUBLIC_KEY }}" > terraform/.ssh/deji_new.pub
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > terraform/.ssh/deji_new
-          chmod 600 terraform/.ssh/deji_new
+          cd terraform
+          mkdir .ssh && cd .ssh
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > deji_new.pub
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > deji_new
+          chmod 600 deji_new
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
