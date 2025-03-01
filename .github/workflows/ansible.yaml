@@ -34,4 +34,4 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deji_new
           chmod 600 ~/.ssh/deji_new
-          ansible-playbook -i ansible-config/inventory.yml ansible-config/playbook.yaml -v
+          ansible-playbook -i ansible/inventory.yml ansible/playbook.yaml -v
