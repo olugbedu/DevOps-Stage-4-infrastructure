@@ -23,7 +23,6 @@ jobs:
       
       - name: Copy ssh key
         run: |
-          cd terraform
           mkdir .ssh && cd .ssh
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > deji_new.pub
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > deji_new
