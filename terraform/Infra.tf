@@ -93,13 +93,14 @@ resource "aws_security_group" "todo_sg" {
 }
 
 # Generating keypair
+data "aws_key_pair" "existing_key" {
+  key_name = "deji_new"
+}
+
 resource "aws_key_pair" "deji_new" {
+  count      = length(data.aws_key_pair.existing_key.id) == 0 ? 1 : 0
   key_name   = "deji_new"
   public_key = file("~/.ssh/deji_new.pub")
-
-  lifecycle {
-    ignore_changes = [public_key]
-  }
 }
 
 # EC2 Instance
