@@ -109,7 +109,7 @@ resource "aws_instance" "todo-app" {
   instance_type   = "t2.large"
   subnet_id       = aws_subnet.public.id
   security_groups = [aws_security_group.todo_sg.id]
-  key_name        = aws_key_pair.deji_new.id
+  key_name        = aws_key_pair.deji_new[0].id
   tags = {
     Name = "todo-app"
   }
