@@ -19,11 +19,19 @@ jobs:
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
-      - name: SSH into EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.ELASTIC_IP }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            ansible-playbook -i ansible/inventory.yaml ansible/playbook.yaml --extra-vars '@ansible/terraform_vars.yml'
+    #   - name: SSH into EC2
+    #     uses: appleboy/ssh-action@master
+    #     with:
+    #       host: ${{ secrets.ELASTIC_IP }}
+    #       username: ubuntu
+    #       key: ${{ secrets.SSH_PRIVATE_KEY }}
+    #       script: |
+    #         ansible --version
+    #         ansible-playbook -i ansible/inventory.yaml ansible/playbook.yaml --extra-vars '@ansible/terraform_vars.yml'
+      - name: Run Ansible Playbook
+        run: |
+          ansible --version
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deji_new
+          chmod 600 ~/.ssh/deji_new
+          ansible-playbook -i ansible-config/inventory.yml ansible-config/playbook.yaml -v
