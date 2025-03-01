@@ -93,18 +93,18 @@ resource "aws_security_group" "todo_sg" {
 }
 
 # Generating keypair
-resource "aws_key_pair" "deji_stage4" {
-  key_name   = "deji_stage4"
-  public_key = file("~/.ssh/deji_stage4.pub")
+resource "aws_key_pair" "deji_new" {
+  key_name   = "deji_new"
+  public_key = file("~/.ssh/deji_new.pub")
 }
 
 # EC2 Instance
 resource "aws_instance" "todo-app" {
-  ami             = "ami-0e1bed4f06a3b463d"
+  ami             = "ami-03fd334507439f4d1"
   instance_type   = "t2.large"
   subnet_id       = aws_subnet.public.id
   security_groups = [aws_security_group.todo_sg.id]
-  key_name        = aws_key_pair.deji_stage4.id
+  key_name        = aws_key_pair.deji_new.id
   tags = {
     Name = "todo-app"
   }
@@ -129,7 +129,7 @@ resource "local_file" "ansible_vars" {
 terraform_output:
   elastic_ip: "54.246.122.204" 
 EOF
-  filename = "${path.module}/ansible-setup/terraform_vars.yml"
+  filename = "../${path.module}/ansible/terraform_vars.yml"
 }
 
 # Wait for EC2 instance to be ready
@@ -144,7 +144,7 @@ resource "null_resource" "wait_for_instance" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file("~/.ssh/deji_stage4")
+      private_key = file("~/.ssh/deji_new")
       host        = "54.246.122.204"
       timeout     = "5m"
     }
@@ -155,13 +155,13 @@ resource "null_resource" "wait_for_instance" {
 }
 
 # Run Ansible after instance is confirmed ready
-resource "null_resource" "run_ansible" {
-  depends_on = [
-    null_resource.wait_for_instance,
-    local_file.ansible_vars
-  ]
+# resource "null_resource" "run_ansible" {
+#   depends_on = [
+#     null_resource.wait_for_instance,
+#     local_file.ansible_vars
+#   ]
   
-   provisioner "local-exec" {
-    command = "ssh-keygen -R 54.246.122.204 && sleep 120 && ansible-playbook -i ansible-setup/inventory.yaml --extra-vars '@ansible-setup/terraform_vars.yml' ansible-setup/playbook.yaml"
-  }
-}
+#    provisioner "local-exec" {
+#     command = "ssh-keygen -R 54.246.122.204 && sleep 120 && ansible-playbook -i ansible/inventory.yaml --extra-vars '@ansible/terraform_vars.yml' ansible/playbook.yaml"
+#   }
+# }
