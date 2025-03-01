@@ -1,0 +1,137 @@
+name: Infrastructure Provision, Deploy and Configure
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    outputs:
+      apply_status: ${{ steps.apply.outcome }}  # Capture Terraform Apply outcome
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Copy ssh key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/deji_new.pub
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deji_new
+          chmod 600 ~/.ssh/deji_new
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+      
+      - name: Terraform validate
+        run: |
+          cd terraform
+          terraform validate
+  
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        working-directory: terraform
+        run: terraform plan -no-color -input=false | tail -n 100
+        continue-on-error: true
+
+      - name: Comment Terraform Plan on PR
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.WRITE_PAT }}
+          script: |
+            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            if (context.payload.pull_request) {
+              github.rest.issues.createComment({
+                issue_number: context.payload.pull_request.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              });
+            } else {
+              console.log("Not a pull request, skipping comment.");
+            }
+
+      - name: Terraform Plan Status
+        if: steps.plan.outputs.exitcode != 0
+        run: exit 1
+
+      - name: Terraform Apply
+        id: apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        working-directory: terraform
+        run: terraform apply -auto-approve -input=false
+
+      - name: Wait for instance to be SSH ready
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          timeout 300 bash -c 'while ! nc -z ${{ secrets.ELASTIC_IP }} 22; do sleep 1; done'
+
+  ansible:
+    runs-on: ubuntu-latest
+    needs: terraform
+    if: ${{ needs.terraform.outputs.apply_status == 'success' }}  # Runs only if Terraform Apply succeeds
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        run: sudo apt-get update && sudo apt-get install -y python3-pip
+
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+
+      - name: SSH into EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.ELASTIC_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            ansible-playbook -i ansible/inventory.yaml ansible/playbook.yaml --extra-vars '@ansible/terraform_vars.yml'
+
+
+      - name: Cleanup Sensitive Files
+        if: always()
+        run: |
+          rm -f ~/.ssh/deji_new
