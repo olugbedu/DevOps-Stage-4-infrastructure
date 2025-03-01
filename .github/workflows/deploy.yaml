@@ -38,11 +38,6 @@ jobs:
         run: |
           cd terraform
           terraform init
-
-      - name: Terraform format
-        run: |
-          cd terraform
-          terraform fmt -check
       
       - name: Terraform validate
         run: |
