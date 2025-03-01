@@ -23,6 +23,7 @@ jobs:
       
       - name: Copy ssh key
         run: |
+          mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/deji_new.pub
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deji_new
           chmod 600 ~/.ssh/deji_new
